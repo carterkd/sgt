@@ -1,0 +1,11 @@
+Package: sgt
+Version: 2.0
+Type: Package
+Title: Skewed Generalized T Distribution Tree
+Date: 2015-08-30
+Author: Carter Davis
+Maintainer: Carter Davis <cdavis40@chicagobooth.edu>
+Depends: R (>= 3.0.0), optimx (>= 2013.8.7), numDeriv (>= 2014.2-1)
+Description: Density, distribution function, quantile function and random generation for the skewed generalized t distribution. This package also provides a function that can fit data to the skewed generalized t distribution using maximum likelihood estimation.
+License: GPL (>= 3)
+Repository: CRAN

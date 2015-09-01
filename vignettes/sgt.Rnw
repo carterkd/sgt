@@ -1,0 +1,843 @@
+%\VignetteIndexEntry{Skewed Generalized T Distribution Tree}
+%\VignetteKeyword{SGT, skewness, normal, laplace, cauchy, skewed normal, skewed t, generalized t, generalized error distribution, uniform, distribution, skewed generalized t, skewed generalized t distribution}
+
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage{booktabs}
+\usepackage{setspace}
+\usepackage[margin=1in]{geometry}
+\usepackage{titlesec}
+\usepackage{indentfirst}
+\usepackage{ragged2e}
+\usepackage{array}
+\usepackage{float}
+\usepackage[flushleft]{threeparttable}
+\usepackage[linktoc=all, colorlinks=true]{hyperref}
+\usepackage{etoolbox}
+\usepackage{Sweave} % This is for R code
+
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\setlength{\RaggedRightParindent}{\parindent}
+\renewcommand{\thesection}{\Alph{section}.}
+\renewcommand{\thesubsection}{\Alph{subsection}.}
+\renewcommand{\thesubsubsection}{\thesubsection\arabic{subsubsection}.}
+\titleformat{\section}{\bfseries\centering}{\thesection}{1em}{}
+\titleformat{\subsection}{\itshape}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\itshape\centering}{\thesubsubsection}{1em}{}
+\renewcommand{\thetable}{\Roman{table}}
+
+% comment command
+\newcommand{\comment}[1]{\todo[inline, color=green!40]{#1}\noindent}
+
+% subcaption commands
+\newcounter{subcaption}[figure]
+\newcommand{\subcaption}[1]{\refstepcounter{subcaption}\centering \textit{Panel \Alph{subcaption}: #1}}
+\newcounter{subsubcaption}[subcaption]
+\newcommand{\subsubcaption}[1]{\refstepcounter{subsubcaption}\centering\textit{Panel \Alph{subcaption}.\arabic{subsubcaption}: #1}}
+
+\makeatletter
+\patchcmd{\l@section}
+  {\hfil}
+  {\leaders\hbox{\normalfont$\m@th\mkern \@dotsep mu\hbox{.}\mkern \@dotsep mu$}\hfill}
+  {}{}
+\makeatother
+
+\makeatletter
+\pretocmd{\contentsline}
+  {\patchcmd{\@dottedtocline}
+     {\leaders}
+     {\hyper@linkstart{link}{#4}\leaders}
+     {}
+     {}%
+   \patchcmd{\@dottedtocline}
+     {\hfill}
+     {\hfill\hyper@linkend}
+     {}
+     {}}
+  {}
+  {}
+\makeatother
+
+\title{The Skewed Generalized T Distribution Tree Package Vignette}
+
+\author{Carter Davis\thanks{Booth School of Business, University of Chicago}}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+\RaggedRight
+
+\begin{center}
+\textbf{Summary}
+\end{center}
+The Skewed Generalized T Distribution is a univariate 5-parameter distribution introduced by Theodossiou (1998) and known for its extreme flexibility. Special and limiting cases of the SGT distribution include the skewed generalized error distribution, the generalized t distribution introduced by McDonald and Newey (1988), the skewed t proposed by Hansen (1994), the skewed Laplace distribution, the generalized error distribution (also known as the generalized normal distribution), the skewed normal distribution, the student t distribution, the skewed Cauchy distribution, the Laplace distribution, the uniform distribution, the normal distribution, and the Cauchy distribution. This vignette describe the skewed generalized t distribution and its various special cases.
+
+\clearpage
+\setcounter{page}{1}
+
+\tableofcontents
+\doublespacing
+
+\clearpage
+\section{Introduction}
+
+The skewed generalized t distribution (SGT) is a highly flexible distribution with many special cases. The SGT distribution has five parameters: $\mu$, $\sigma$, $\lambda$, $p$, and $q$. The graphic below shows the special cases of the SGT distribution and which parameters must be set to obtain these distributions.
+
+\begin{figure}[!htbp]
+\begin{center}
+\includegraphics[width=0.9\linewidth]{graphics/SGT_tree} 
+\end{center}
+This graphic was adapted from Hansen, McDonald, and Newey (2010).
+\end{figure}
+
+Note that the SGT parameters have the following restrictions:
+\begin{align}
+\left\{ (\sigma,\lambda,p,q): \sigma>0, -1 < \lambda < 1, p>0, q>0 \right\}
+\end{align}
+It is important to note that if any of the parameters are not within these bounds in any of the \texttt{[dpqr]sgt} functions, then a warning message is issued and \texttt{NaNs} produced. Note that \texttt{p} and \texttt{q} are allowed to be \texttt{Inf}.
+
+The section that describes the SGT distribution gives the closed form definition of the moments and shows how the parameters influence the moments. We show below though how the parameters influence the moments of the distribution.
+
+\begin{figure}
+\caption{Visualizing the Flexibility of the Skewed Generalized T Distribution} \label{fig:flexible}
+\bigskip
+\centering
+\begin{minipage}{.5\textwidth}
+  \subcaption{$\mu$ Equals the Mean}
+  \includegraphics[width=0.85\linewidth]{graphics/mu}
+\end{minipage}%
+\bigskip\begin{minipage}{.5\textwidth}
+  \subcaption{$\sigma$ Controls the Variance}
+  \includegraphics[width=0.85\linewidth]{graphics/sigma}
+\end{minipage}
+\bigskip
+\begin{minipage}{.5\textwidth}
+  \subcaption{$\lambda$ Controls the Skewness}
+  \includegraphics[width=0.85\linewidth]{graphics/lambda}
+\end{minipage}%
+\bigskip\begin{minipage}{.5\textwidth}
+  \subcaption{p and q Control the Kurtosis}
+  \includegraphics[width=0.85\linewidth]{graphics/p}
+\end{minipage}
+\bigskip
+\begin{minipage}{.5\textwidth}
+  \subcaption{p and q Control the Kurtosis}
+  \includegraphics[width=0.85\linewidth]{graphics/q}
+\end{minipage}%
+\begin{minipage}{.5\textwidth}
+\center Explanation: This figure shows the flexibility of the SGT distribution. The black curve in each graph has parameter values: $\mu = 0$, $\sigma = 1$, $\lambda = 0$, $p = 2$, and $q = 100$, with both \texttt{mean.cent} and \texttt{var.adj} are \texttt{TRUE}. This approximates a standard normal pdf very closely. All other curves change just one parameter.
+\end{minipage}
+\end{figure}
+
+There are two options that are important to note in the \texttt{[dpqr]sgt} functions: \texttt{mean.cent} and \texttt{var.adj}. 
+
+The \texttt{mean.cent} is either \texttt{TRUE} or \texttt{FALSE}. If \texttt{mean.cent} is \texttt{TRUE}, then $\mu$ is the mean of the distribution. If \texttt{mean.cent} is \texttt{FALSE}, then $\mu$ is the mode of the distribution. In the present of skewness of course, the mean equals the mode and the \texttt{mean.cent} option makes no difference. \textbf{Importantly, \texttt{mean.cent} can only be \texttt{TRUE} if $pq > 1$. If $pq \leq 1$ and \texttt{mean.cent} is \texttt{TRUE}, then a warning will be given and \texttt{NaNs} produced.}
+
+The \texttt{var.adj} is either \texttt{TRUE}, \texttt{FALSE}, or a positive scalar (numeric of length one). If \texttt{var.adj} is \texttt{TRUE}, then the $\sigma$ parameter is scaled such that $\sigma^2$ is the variance of the distribution. If \texttt{var.adj} is \texttt{FALSE}, then if $pq > 2$, the variance, for $pq > 2$, is simply proportional to $\sigma^2$, holding all other parameters fixed. If \texttt{var.adj} is a positive scalar then, then $\sigma$ is scaled by the value of \texttt{var.adj}. The SGT section below shows how this is done. \textbf{Importantly, \texttt{var.adj} can only be \texttt{TRUE} if $pq > 2$. If \texttt{var.adj} is \texttt{TRUE} and $pq \leq 2$ then a warning will be given and \texttt{NaNs} produced. If \texttt{var.adj} is a non-positive scalar, then a warning is issued and \texttt{var.adj} is assumed \texttt{FALSE}.}
+
+It is important to note that the $h^{th}$ moment of the SGT distribution is only defined if $pq > h$. Thus the $h^{th}$ moments reported in this vignette only hold true if $pq > h$.
+
+The $\lambda$ parameter controls the skewness of the distribution. To see this, let $M$ denote the mode of the distribution, and note that 
+\begin{align}
+\int_{-\infty}^{M}  f_{SGT}(x; \mu, \sigma, \lambda, p, q) dx = \frac{1-\lambda}{2}
+\end{align}
+
+Since $-1 < \lambda < 1$, the probability left of the mode, and therefore right of the mode as well, can equal any value in (0,1) depending on the value of $\lambda$. Thus the SGT distribution can be highly skewed as well as symmetric. If $-1 < \lambda < 0$, then the distribution is negatively skewed. If $0 < \lambda < 1$, then the distribution is positively skewed. If $\lambda = 0$, then the distribution is symmetric. 
+
+Finally, $p$ and $q$ control the kurtosis of the distribution. As $p$ and $q$ get smaller, the kurtosis increases (i.e. becomes more leptokurtic). Large values of $p$ and $q$ yield a distribution that is more platykurtic.
+
+The remainder of this vignette outlines the properties of the SGT distribution and its special cases. At the top of each section, a line of \textbf{\textsf{R}} code is given to show how to obtain that special case of the SGT distribution. For example, the normal distribution section gives the line of code:
+\begin{Schunk}
+\begin{Sinput}
+> dsgt(x, mu, sigma, lambda = 0, p = 2, q = Inf, mean.cent, var.adj)
+\end{Sinput}
+\end{Schunk}
+which shows that the normal distribution has the parameters $\mu$ and $\sigma$ free, while the other paramers should be equal to their given values to obtain the normal distribution.
+
+\clearpage
+\section{Skewed Generalized T Distribution}
+\begin{Schunk}
+\begin{Sinput}
+> dsgt(x, mu, sigma, lambda, p, q, mean.cent, var.adj)
+\end{Sinput}
+\end{Schunk}
+
+The Skewed Generalized T Distribution has the pdf:
+\begin{align*} 
+    f_{SGT}(x; \mu, \sigma, \lambda, p, q) = \frac{p}{2 v \sigma  q^{1/p} B\left(\frac{1}{p},q\right) \left(\frac{\left| x-\mu + m \right| ^p}{q (v \sigma) ^p (\lambda  \text{\text{sign}}(x-\mu + m)+1)^p}+1\right)^{\frac{1}{p}+q}}
+\end{align*}
+where 
+\begin{align*}
+m = \frac{2 v \sigma \lambda q^{\frac{1}{p}} B\left(\frac{2}{p},q-\frac{1}{p}\right)}{B\left(\frac{1}{p},q\right)}
+\end{align*}
+if \texttt{mean.cent = TRUE} and 0 otherwise. Note that \texttt{mean.cent = TRUE} and $pq \leq 1$ is an error and \texttt{NaNs} will be produced. Also
+\begin{align*}
+v = q^{-\frac{1}{p}} \left[ (3 \lambda^2 + 1) \left( \frac{ B \left( \frac{3}{p}, q - \frac{2}{p} \right)}{B \left(\frac{1}{p}, q \right)} \right) -4 \lambda^2 \left( \frac{B \left( \frac{2}{p}, q - \frac{1}{p} \right)}{ B \left(\frac{1}{p}, q \right)} \right)^2 \right]^{-\frac{1}{2}}
+\end{align*}
+if \texttt{var.adj = TRUE}, $v = 1$ if \texttt{var.adj = FALSE}, and $v$ is the value of \texttt{var.adj} if \texttt{var.adj} is a positive scalar. Note that \texttt{var.adj = TRUE} and $pq \leq 2$ is an error and \texttt{NaNs} will be produced. 
+
+The $h^{th}$ moment (i.e. $E[(X- E(X))^h]$), for $pq > h$, is:
+\small \begin{align*}
+ \sum_{r=0}^{h} \binom{h}{r} \left(\left(1+\lambda\right)^{r+1}+(-1)^r (1-\lambda)^{r+1} \right) \left( - \lambda \right)^{h-r} \left(\frac{ (v \sigma)^h q^{\frac{h}{p}}}{2^{r-h+1}}\right) \left(\frac{ B\left(\frac{r+1}{p},q-\frac{r}{p}\right) B\left(\frac{2}{p},q-\frac{1}{p} \right)^{h-r}}{ B\left(\frac{1}{p},q\right)^{h-r+1} }\right)
+\end{align*}
+
+\normalsize The mean, for $pq > 1$, is:
+\begin{align*}
+\mu + \frac{2 v \sigma \lambda q^{\frac{1}{p}} B\left(\frac{2}{p},q-\frac{1}{p}\right)}{B\left(\frac{1}{p},q\right)} - m
+\end{align*}
+thus if \texttt{mean.cent = TRUE}, the mean, for $pq > 1$, is simply $\mu$.
+
+The variance, for $pq > 2$, is:
+\begin{align*} 
+(v \sigma)^2 q^{\frac{2}{p}} \left[ (3 \lambda^2 + 1) \left( \frac{ B \left( \frac{3}{p}, q - \frac{2}{p} \right)}{B \left(\frac{1}{p}, q \right)} \right) -4 \lambda^2 \left( \frac{B \left( \frac{2}{p}, q - \frac{1}{p} \right)}{ B \left(\frac{1}{p}, q \right)} \right)^2 \right]
+\end{align*} 
+thus if \texttt{var.adj = TRUE}, the variance, for $pq > 2$, is simply $\sigma^2$.
+\bigskip
+
+The skewness, for $pq > 3$, is:
+\singlespacing \begin{align*}
+\frac{2 q^{3/p} \lambda  (v \sigma) ^3}{B\left(\frac{1}{p},q\right)^3} \Bigg( 8 \lambda ^2 B\left(\frac{2}{p},q-\frac{1}{p}\right)^3-3 \left(1+3 \lambda ^2\right) B\left(\frac{1}{p},q\right)
+\end{align*}
+\begin{align*}
+\times B\left(\frac{2}{p},q-\frac{1}{p}\right) B\left(\frac{3}{p},q-\frac{2}{p}\right)+2
+\left(1+\lambda ^2\right) B\left(\frac{1}{p},q\right)^2 B\left(\frac{4}{p},q-\frac{3}{p}\right) \Bigg)
+\end{align*}
+\doublespacing
+\bigskip
+
+The kurtosis, for $pq > 4$, is:
+\singlespacing \begin{align*}
+\frac{q^{4/p} (v \sigma) ^4}{B\left(\frac{1}{p},q\right)^4} \Bigg( -48 \lambda ^4 B\left(\frac{2}{p},q-\frac{1}{p}\right)^4+24
+\lambda ^2 \left(1+3 \lambda ^2\right) B\left(\frac{1}{p},q\right) B\left(\frac{2}{p},q-\frac{1}{p}\right)^2 
+\end{align*}
+\begin{align*}
+\times B\left(\frac{3}{p},q-\frac{2}{p}\right)-32
+\lambda ^2 \left(1+\lambda ^2\right) B\left(\frac{1}{p},q\right)^2 B\left(\frac{2}{p},q-\frac{1}{p}\right) B\left(\frac{4}{p},q-\frac{3}{p}\right)
+\end{align*}
+\begin{align*}
++\left(1+10
+\lambda ^2+5 \lambda ^4\right) B\left(\frac{1}{p},q\right)^3 B\left(\frac{5}{p},q-\frac{4}{p}\right)\Bigg)
+\end{align*}
+\doublespacing
+
+\clearpage
+\section{Skewed Generalized Error Distribution}
+
+\begin{Schunk}
+\begin{Sinput}
+> dsgt(x, mu, sigma, lambda, p, q = Inf, mean.cent, var.adj)
+\end{Sinput}
+\end{Schunk}
+
+The Skewed Generalized Error Distribution has the pdf:
+\singlespacing \begin{align*} 
+\lim_{q\to\infty} f_{SGT}(x; \mu, \sigma, \lambda, p, q) 
+\end{align*}
+\begin{align*}
+= f_{SGED}(x; \mu, \sigma, \lambda, p) = \frac{p e^{- \left( \frac{|x - \mu + m|}{ v \sigma (1 + \lambda \text{sign}(x - \mu + m))} \right)^p }}{2 v \sigma \Gamma \left( 1/p \right)}
+\end{align*}
+\doublespacing where 
+\begin{align*}
+m = \frac{ 2^{ \frac{2}{p} } v \sigma \lambda \Gamma \left( \frac{1}{2} + \frac{1}{p} \right) }{ \sqrt{\pi}}
+\end{align*}
+if \texttt{mean.cent = TRUE} and 0 otherwise.  Also
+\begin{align*}
+v = \left[ \frac{ \pi
+ \left(1+3 \lambda ^2\right) \Gamma\left( \frac{3}{p}\right)-16^{\frac{1}{p}} \lambda ^2 \Gamma\left(\frac{1}{2}+\frac{1}{p}\right)^2 \Gamma\left(\frac{1}{p}\right)}{\pi  \Gamma\left(\frac{1}{p}\right)} \right]^{-\frac{1}{2}}
+\end{align*}
+if \texttt{var.adj = TRUE}, $v = 1$ if \texttt{var.adj = FALSE}, and $v$ is the value of \texttt{var.adj} if \texttt{var.adj} is a positive scalar. 
+
+The $h^{th}$ moment (i.e. $E[(X- E(X))^h]$) is:
+\small \begin{align*}
+ \sum_{r=0}^{h} \binom{h}{r} \left(\left(1+\lambda\right)^{r+1}+(-1)^r (1-\lambda)^{r+1} \right) \left( - \lambda \right)^{h-r} \left(\frac{ (v \sigma)^h }{2^{r-h+1}}\right) \left( \frac{\Gamma \left( \frac{2}{p} \right)^{h-r} \Gamma \left( \frac{r+1}{p} \right)}{\Gamma \left( \frac{1}{p} \right)^{h+1-r}} \right)
+\end{align*}
+
+\normalsize The mean is:
+\begin{align*}
+\mu + \frac{ 2^{ \frac{2}{p} } v \sigma \lambda \Gamma \left( \frac{1}{2} + \frac{1}{p} \right) }{ \sqrt{\pi}} - m
+\end{align*}
+thus if \texttt{mean.cent = TRUE}, the mean is simply $\mu$.
+
+The variance is:
+\begin{align*} 
+\frac{(v \sigma) ^2 \left(\pi
+ \left(1+3 \lambda ^2\right) \Gamma\left( \frac{3}{p}\right)-16^{\frac{1}{p}} \lambda ^2 \Gamma\left(\frac{1}{2}+\frac{1}{p}\right)^2 \Gamma\left(\frac{1}{p}\right)\right)}{\pi  \Gamma\left(\frac{1}{p}\right)}
+\end{align*} 
+thus if \texttt{var.adj = TRUE}, the variance is simply $\sigma^2$.
+
+\bigskip
+The skewness is:
+\singlespacing \begin{align*}
+\frac{\lambda  \sigma ^3}{\pi ^{3/2} \Gamma\left(\frac{1}{p}\right)} \Bigg( 2^{\frac{6+p}{p}} \lambda ^2 \Gamma\left(\frac{1}{2}+\frac{1}{p}\right)^3
+\Gamma\left(\frac{1}{p}\right)-3(4)^{\frac{1}{p}} \pi  \left(1+3 \lambda ^2\right) \Gamma\left(\frac{1}{2}+\frac{1}{p}\right) \Gamma\left(\frac{3}{p}\right)
+\end{align*}
+\begin{align*}
++4 \pi ^{3/2} \left(1+\lambda ^2\right) \Gamma\left(\frac{4}{p}\right) \Bigg)
+\end{align*}
+\doublespacing
+
+\bigskip
+The kurtosis is:
+\singlespacing \begin{align*}
+\frac{\sigma ^4}{\pi ^2 \Gamma\left(\frac{1}{p}\right)} \Bigg( -3 (256)^{\frac{1}{p}} \lambda ^4 \Gamma\left(\frac{1}{2}+\frac{1}{p}\right)^4
+\Gamma\left(\frac{1}{p}\right)+3 (2)^{\frac{4+p}{p}} \pi  \lambda ^2 \left(1+3 \lambda ^2\right) \Gamma\left(\frac{1}{2}+\frac{1}{p}\right)^2
+\Gamma\left(\frac{3}{p}\right)
+\end{align*}
+\begin{align*}
+-2^{4+\frac{2}{p}} \pi ^{3/2} \lambda ^2 \left(1+\lambda ^2\right) \Gamma\left(\frac{1}{2}+\frac{1}{p}\right)
+\Gamma\left(\frac{4}{p}\right)+\pi ^2 \left(1+10 \lambda ^2+5 \lambda ^4\right) \Gamma\left(\frac{5}{p}\right) \Bigg)
+\end{align*}
+\doublespacing
+
+\clearpage
+\section{Generalized T Distribution}
+
+\begin{Schunk}
+\begin{Sinput}
+> dsgt(x, mu, sigma, lambda = 0, p, q, mean.cent, var.adj)
+\end{Sinput}
+\end{Schunk}
+
+The Generalized T Distribution has the pdf: \singlespacing 
+\begin{align*} 
+f_{SGT}(x; \mu, \sigma, \lambda = 0, p, q) 
+\end{align*}
+\begin{align*} 
+= f_{GT}(x; \mu, \sigma, p, q) = \frac{p}{2 v \sigma  q^{1/p} B\left(\frac{1}{p},q\right) \left(\frac{\left| x-\mu \right| ^p}{q (v \sigma) ^p }+1\right)^{\frac{1}{p}+q}}
+\end{align*}
+\doublespacing where 
+\begin{align*}
+v = \frac{1}{q^{1/p}} \left(\frac{ B\left(\frac{1}{p},q\right) }{ B\left(\frac{3}{p},q-\frac{2}{p}\right) }\right)^{1/2}
+\end{align*}
+if \texttt{var.adj = TRUE}, $v = 1$ if \texttt{var.adj = FALSE}, and $v$ is the value of \texttt{var.adj} if \texttt{var.adj} is a positive scalar. Note that \texttt{var.adj = TRUE} and $pq \leq 2$ is an error and \texttt{NaNs} will be produced. 
+
+The $h^{th}$ moment (i.e. $E[(X- E(X))^h]$), for $pq > h$, is:
+\small \begin{align*}
+\left( 1+(-1)^h \right) \left(\frac{ (v \sigma)^h q^{\frac{h}{p}}}{2}\right) \left(\frac{ B\left(\frac{h+1}{p},q-\frac{h}{p}\right) }{ B\left(\frac{1}{p},q\right) }\right)
+\end{align*}
+
+\normalsize The mean, for $pq > 1$, is $\mu$.
+
+The variance, for $pq > 2$, is:
+\begin{align*} 
+(v \sigma)^2 q^{2/p} \left(\frac{ B\left(\frac{3}{p},q-\frac{2}{p}\right) }{ B\left(\frac{1}{p},q\right) }\right)
+\end{align*} 
+thus if \texttt{var.adj = TRUE}, the variance, for $pq > 2$, is simply $\sigma^2$.
+\bigskip
+
+The skewness, for $pq > 3$, is 0.
+
+The kurtosis, for $pq > 4$, is:
+\begin{align*}
+(v \sigma)^4 q^{4/p} \left(\frac{ B\left(\frac{5}{p},q-\frac{4}{p}\right) }{ B\left(\frac{1}{p},q\right) }\right)
+\end{align*}
+
+\clearpage
+\section{Skewed T Distribution}
+
+\begin{Schunk}
+\begin{Sinput}
+> dsgt(x, mu, sigma, lambda, p = 2, q, mean.cent, var.adj)
+\end{Sinput}
+\end{Schunk}
+
+The Skewed T Distribution has the pdf:
+\singlespacing \begin{align*} 
+f_{SGT}(x; \mu, \sigma, \lambda, p = 2, q) 
+\end{align*}
+\begin{align*} 
+= f_{ST}(x; \mu, \sigma, \lambda, q) = \frac{\Gamma \left( \frac{1}{2}+q \right)}{v \sigma (\pi q)^{1/2} \Gamma (q) \left(\frac{\left| x-\mu + m \right| ^2}{q (v \sigma) ^2 (\lambda  \text{\text{sign}}(x-\mu + m)+1)^2}+1\right)^{\frac{1}{2}+q}}
+\end{align*}
+\doublespacing where 
+\begin{align*}
+m = \frac{2 v \sigma \lambda q^{1/2} \Gamma \left(q-\frac{1}{2}\right)}{\pi^{1/2} \Gamma \left(q+\frac{1}{2}\right)}
+\end{align*}
+if \texttt{mean.cent = TRUE} and 0 otherwise. Note that \texttt{mean.cent = TRUE} and $q \leq 1/2$ is an error and \texttt{NaNs} will be produced. Also
+\begin{align*}
+v = q^{-1/2} \left[ (3 \lambda^2 + 1) \left( \frac{1}{2q-2} \right) -\frac{4 \lambda^2}{\pi} \left( \frac{\Gamma \left( q - \frac{1}{2} \right)}{ \Gamma \left( q \right)} \right)^2 \right]^{-1/2}
+\end{align*}
+if \texttt{var.adj = TRUE}, $v = 1$ if \texttt{var.adj = FALSE}, and $v$ is the value of \texttt{var.adj} if \texttt{var.adj} is a positive scalar. Note that \texttt{var.adj = TRUE} and $q \leq 1$ is an error and \texttt{NaNs} will be produced. 
+
+The $h^{th}$ moment (i.e. $E[(X- E(X))^h]$), for $q > h/2$, is:
+\small \begin{align*}
+ \sum_{r=0}^{h} \binom{h}{r} \left(\left(1+\lambda\right)^{r+1}+(-1)^r (1-\lambda)^{r+1} \right) \left( - \lambda \right)^{h-r} \left(\frac{ (v \sigma)^h q^{\frac{h}{2}}}{2^{r-h+1}}\right) \left(\frac{ B\left(\frac{r+1}{2},q-\frac{r}{2}\right) B\left(1,q-\frac{1}{2} \right)^{h-r}}{ B\left(\frac{1}{2},q\right)^{h-r+1} }\right)
+\end{align*}
+
+\normalsize The mean, for $q > 1/2$, is:
+\begin{align*}
+\mu + \frac{2 v \sigma \lambda q^{1/2} \Gamma \left(q-\frac{1}{2}\right)}{\pi^{1/2} \Gamma \left(q+\frac{1}{2}\right)} - m
+\end{align*}
+thus if \texttt{mean.cent = TRUE}, the mean, for $q > 1/2$, is simply $\mu$.
+
+The variance, for $q > 1$, is:
+\begin{align*} 
+(v \sigma)^2 q \left[ (3 \lambda^2 + 1) \left( \frac{1}{2q-2} \right) -\frac{4 \lambda^2}{\pi} \left( \frac{\Gamma \left( q - \frac{1}{2} \right)}{ \Gamma \left( q \right)} \right)^2 \right]
+\end{align*} 
+thus if \texttt{var.adj = TRUE}, the variance, for $q > 1$, is simply $\sigma^2$.
+\bigskip
+
+The skewness, for $q > 3/2$, is:
+\singlespacing \begin{align*}
+\frac{2 q^{3/2} \lambda  (v \sigma) ^3}{B\left(\frac{1}{2},q\right)^3} \Bigg( 8 \lambda ^2 B\left(1,q-\frac{1}{2}\right)^3-3 \left(1+3 \lambda ^2\right) B\left(\frac{1}{2},q\right)
+\end{align*}
+\begin{align*}
+\times B\left(1,q-\frac{1}{2}\right) B\left(\frac{3}{2},q-1 \right)+2
+\left(1+\lambda ^2\right) B\left(\frac{1}{2},q\right)^2 B\left(2, q-\frac{3}{2}\right) \Bigg)
+\end{align*}
+\doublespacing
+\bigskip
+
+The kurtosis, for $q > 2$, is:
+\singlespacing \begin{align*}
+\frac{q^{2} (v \sigma) ^4}{B\left(\frac{1}{2},q\right)^4} \Bigg( -48 \lambda ^4 B\left(1,q-\frac{1}{2}\right)^4+24
+\lambda ^2 \left(1+3 \lambda ^2\right) B\left(\frac{1}{2},q\right) B\left(1,q-\frac{1}{2}\right)^2 
+\end{align*}
+\begin{align*}
+\times B\left(\frac{3}{2},q-1\right)-32
+\lambda ^2 \left(1+\lambda ^2\right) B\left(\frac{1}{2},q\right)^2 B\left(1,q-\frac{1}{2}\right) B\left(2,q-\frac{3}{2}\right)
+\end{align*}
+\begin{align*}
++\left(1+10
+\lambda ^2+5 \lambda ^4\right) B\left(\frac{1}{2},q\right)^3 B\left(\frac{5}{2},q-2\right)\Bigg)
+\end{align*}
+\doublespacing
+
+\clearpage
+\section{Skewed Laplace Distribution}
+
+\begin{Schunk}
+\begin{Sinput}
+> dsgt(x, mu, sigma, lambda, p = 1, q = Inf, mean.cent, var.adj)
+\end{Sinput}
+\end{Schunk}
+
+The Skewed Laplace Distribution has the pdf:
+\singlespacing \begin{align*} 
+\lim_{q\to\infty} f_{SGT}(x; \mu, \sigma, \lambda, p = 1, q) 
+\end{align*}
+\begin{align*}
+= f_{SLaplace}(x; \mu, \sigma, \lambda) = \frac{e^{ \frac{- |x - \mu + m|}{ v \sigma (1 + \lambda \text{sign}(x - \mu + m))} }}{2 v \sigma }
+\end{align*}
+\doublespacing where 
+\begin{align*}
+m = 2 v \sigma \lambda
+\end{align*}
+if \texttt{mean.cent = TRUE} and 0 otherwise. Also
+\begin{align*}
+v = \left[ 2 \left(1+\lambda ^2\right) \right]^{-\frac{1}{2}}
+\end{align*}
+if \texttt{var.adj = TRUE}, $v = 1$ if \texttt{var.adj = FALSE}, and $v$ is the value of \texttt{var.adj} if \texttt{var.adj} is a positive scalar. 
+
+The $h^{th}$ moment (i.e. $E[(X- E(X))^h]$) is:
+\small \begin{align*}
+ \sum_{r=0}^{h} \binom{h}{r} \left(\left(1+\lambda\right)^{r+1}+(-1)^r (1-\lambda)^{r+1} \right) \left( - \lambda \right)^{h-r} \left(\frac{ (v \sigma)^h }{2^{r-h+1}}\right) \Gamma \left( r+1 \right)
+\end{align*}
+
+\normalsize The mean is:
+\begin{align*}
+\mu + 2 v \sigma \lambda - m
+\end{align*}
+thus if \texttt{mean.cent = TRUE}, the mean is simply $\mu$.
+
+The variance is:
+\begin{align*} 
+2 (v \sigma) ^2 \left( 1 + \lambda^2 \right)
+\end{align*} 
+thus if \texttt{var.adj = TRUE}, the variance is simply $\sigma^2$.
+
+The skewness is:
+\begin{align*}
+4 (v \sigma)^3 \lambda (3 + \lambda^2)
+\end{align*}
+
+The kurtosis is:
+\begin{align*}
+24 (v \sigma)^4 (1 + 4 \lambda^2 + \lambda^4)
+\end{align*}
+
+\clearpage
+\section{Generalized Error Distribution}
+
+\begin{Schunk}
+\begin{Sinput}
+> dsgt(x, mu, sigma, lambda = 0, p, q = Inf, mean.cent, var.adj)
+\end{Sinput}
+\end{Schunk}
+
+The Generalized Error Distribution has the pdf:
+\singlespacing \begin{align*} 
+\lim_{q\to\infty} f_{SGT}(x; \mu, \sigma, \lambda = 0, p, q) 
+\end{align*}
+\begin{align*}
+= f_{GED}(x; \mu, \sigma, p) = \frac{p e^{- \left( \frac{|x - \mu|}{ v \sigma} \right)^p }}{2 v \sigma \Gamma \left( 1/p \right)}
+\end{align*}
+\doublespacing where 
+\begin{align*}
+v = \left[ \frac{\Gamma \left( \frac{1}{p} \right)}{ \Gamma \left( \frac{3}{p} \right)} \right]^{1/2}
+\end{align*}
+if \texttt{var.adj = TRUE}, $v = 1$ if \texttt{var.adj = FALSE}, and $v$ is the value of \texttt{var.adj} if \texttt{var.adj} is a positive scalar. 
+
+The $h^{th}$ moment (i.e. $E[(X- E(X))^h]$) is:
+\small \begin{align*}
+ \left( 1+(-1)^h \right) \left(\frac{ (v \sigma)^h }{2}\right) \left( \frac{ \Gamma \left( \frac{h+1}{p} \right)}{\Gamma \left( \frac{1}{p} \right)} \right)
+\end{align*}
+
+\normalsize The mean is $\mu$.
+
+The variance is:
+\begin{align*} 
+(v \sigma)^2 \left( \frac{ \Gamma \left( \frac{3}{p} \right)}{\Gamma \left( \frac{1}{p} \right)} \right)
+\end{align*} 
+thus if \texttt{var.adj = TRUE}, the variance is simply $\sigma^2$.
+
+The skewness is 0.
+
+The kurtosis is:
+\begin{align*}
+(v \sigma)^4 \left( \frac{ \Gamma \left( \frac{5}{p} \right)}{\Gamma \left( \frac{1}{p} \right)} \right)
+\end{align*}
+
+\clearpage
+\section{Skewed Normal Distribution}
+
+\begin{Schunk}
+\begin{Sinput}
+> dsgt(x, mu, sigma, lambda, p = 2, q = Inf, mean.cent, var.adj)
+\end{Sinput}
+\end{Schunk}
+
+The Skewed Normal Distribution has the pdf:
+\singlespacing \begin{align*} 
+\lim_{q\to\infty} f_{SGT}(x; \mu, \sigma, \lambda, p = 2, q) 
+\end{align*}
+\begin{align*}
+= f_{SNormal}(x; \mu, \sigma, \lambda) = \frac{e^{- \left( \frac{|x - \mu + m|}{ v \sigma (1 + \lambda \text{sign}(x - \mu + m))} \right)^2 }}{v \sigma \sqrt{\pi}}
+\end{align*}
+\doublespacing where 
+\begin{align*}
+m = \frac{ 2 v \sigma \lambda }{ \sqrt{\pi}}
+\end{align*}
+if \texttt{mean.cent = TRUE} and 0 otherwise. Also
+\begin{align*}
+v = \left[ \frac{ \left(\pi -8 \lambda ^2+3 \pi  \lambda ^2\right)}{2 \pi } \right]^{-\frac{1}{2}}
+\end{align*}
+if \texttt{var.adj = TRUE}, $v = 1$ if \texttt{var.adj = FALSE}, and $v$ is the value of \texttt{var.adj} if \texttt{var.adj} is a positive scalar. 
+
+The $h^{th}$ moment (i.e. $E[(X- E(X))^h]$) is:
+\small \begin{align*}
+ \sum_{r=0}^{h} \binom{h}{r} \left(\left(1+\lambda\right)^{r+1}+(-1)^r (1-\lambda)^{r+1} \right) \left( - \lambda \right)^{h-r} \left(\frac{ (v \sigma)^h }{2^{r-h+1}}\right) \left( \frac{ \Gamma \left( \frac{r+1}{2} \right)}{ \left( \sqrt{\pi} \right)^{h+1-r}} \right)
+\end{align*}
+
+\normalsize The mean is:
+\begin{align*}
+\mu + \frac{ 2 v \sigma \lambda }{ \sqrt{\pi}} - m
+\end{align*}
+thus if \texttt{mean.cent = TRUE}, the mean is simply $\mu$.
+
+The variance is:
+\begin{align*} 
+\frac{(v \sigma)^2 \left(\pi -8 \lambda ^2+3 \pi  \lambda ^2\right)}{2 \pi }
+\end{align*} 
+thus if \texttt{var.adj = TRUE}, the variance is simply $\sigma^2$.
+
+The skewness is:
+\begin{align*}
+\frac{(v \sigma)^3 \lambda  \left(16 \lambda ^2-\pi  \left(-1+5 \lambda ^2\right)\right)}{\pi ^{3/2}}
+\end{align*}
+
+The kurtosis is:
+\begin{align*}
+\frac{(v \sigma)^4 \left(-192 \lambda ^4+16 \pi  \lambda ^2 \left(-5+\lambda ^2\right)+3 \pi ^2 \left(1+10 \lambda ^2+5 \lambda ^4\right)\right) }{4 \pi ^2}
+\end{align*}
+
+\clearpage
+\section{Student T Distribution}
+
+We present two parameterizations of the Student T Distribution. The first parameterization has the parameters $\mu$, $\sigma$, and $q$ free. The second is consistent with the typical student t distribution parameterization, where $\mu$ and $\sigma$ are fixed at 0 and 1 respectively, and $q = d/2$, where $d$ is the degrees of freedom and the only free parameter.
+
+\textbf{First Parameterization:}
+
+\begin{Schunk}
+\begin{Sinput}
+> dsgt(x, mu, sigma, lambda = 0, p = 2, q, mean.cent, var.adj)
+\end{Sinput}
+\end{Schunk}
+
+The Student T Distribution has the pdf:
+\singlespacing \begin{align*} 
+f_{SGT}(x; \mu, \sigma, \lambda = 0, p = 2, q) 
+\end{align*}
+\begin{align*} 
+= f_{T}(x; \mu, \sigma, q) = \frac{\Gamma \left( \frac{1}{2}+q \right)}{v \sigma (\pi q)^{1/2} \Gamma (q) \left(\frac{\left| x-\mu + m \right| ^2}{q (v \sigma) ^2 }+1\right)^{\frac{1}{2}+q}}
+\end{align*}
+\doublespacing where 
+\begin{align*}
+v = \left( \frac{2q-2}{q} \right)^{1/2}
+\end{align*}
+if \texttt{var.adj = TRUE}, $v = 1$ if \texttt{var.adj = FALSE}, and $v$ is the value of \texttt{var.adj} if \texttt{var.adj} is a positive scalar. Note that \texttt{var.adj = TRUE} and $q \leq 1$ is an error and \texttt{NaNs} will be produced. 
+
+The $h^{th}$ moment (i.e. $E[(X- E(X))^h]$), for $q > h/2$, is:
+\small \begin{align*}
+\left( 1+(-1)^h \right) \left(\frac{ (v \sigma)^h q^{\frac{h}{2}}}{2}\right) \left(\frac{ \Gamma \left(\frac{h+1}{2} \right) \Gamma \left( q-\frac{h}{2}\right) }{ \sqrt{\pi} \ \Gamma \left( q \right)}\right)
+\end{align*}
+
+\normalsize The mean, for $q > 1/2$, is $\mu$.
+
+The variance, for $q > 1$, is:
+\begin{align*} 
+\frac{(v \sigma)^2 q}{2q-2}
+\end{align*} 
+thus if \texttt{var.adj = TRUE}, the variance, for $q > 1$, is simply $\sigma^2$.
+\bigskip
+
+The skewness, for $q > 3/2$, is 0.
+
+The kurtosis, for $q > 2$, is:
+\begin{align*}
+\frac{3 (v \sigma)^4 q^2}{4 (q-2) (q-1)}
+\end{align*}
+
+\textbf{Second Parameterization:}
+
+Let \texttt{df} equal $d$, the degrees of freedom of a typical student t distribution parameterization.
+
+\begin{Schunk}
+\begin{Sinput}
+> dsgt(x, mu = 0, sigma = 1, lambda = 0, p = 2, q = df/2, 
++ mean.cent = FALSE, var.adj = sqrt(2))
+\end{Sinput}
+\end{Schunk}
+
+The Student T Distribution has the pdf:
+\singlespacing \begin{align*} 
+f_{SGT}(x; \mu = 0, \sigma = 1, \lambda = 0, p = 2, q = d/2) 
+\end{align*}
+\begin{align*} 
+= f_{T}(x; d) = \frac{\Gamma \left( \frac{d+1}{2} \right)}{ (\pi d)^{1/2} \Gamma (d/2) \left(\frac{x^2}{d}+1\right)^{\frac{d+1}{2}}}
+\end{align*}
+Note that we substituted $v = \sqrt{2}$ from the first parameterization into this one.
+
+\bigskip
+\doublespacing 
+The $h^{th}$ moment (i.e. $E[(X- E(X))^h]$), for $d > h$, is
+\small \begin{align*}
+\left( 1+(-1)^h \right) \left(\frac{d^{h/2}}{2}\right) \left(\frac{ \Gamma \left(\frac{h+1}{2} \right) \Gamma \left( \frac{d-h}{2}\right) }{ \sqrt{\pi} \ \Gamma \left( d/2 \right)}\right)
+\end{align*}
+
+\normalsize The mean, for $d > 1$, is 0.
+
+The variance, for $d > 2$, is:
+\begin{align*} 
+\frac{d}{d-2}
+\end{align*} 
+
+The skewness, for $d > 3$, is 0.
+
+The kurtosis, for $d > 4$, is:
+\begin{align*}
+\frac{3 d^2}{(d-4) (d-2)}
+\end{align*} 
+
+\clearpage
+\section{Skewed Cauchy Distribution}
+
+\begin{Schunk}
+\begin{Sinput}
+> dsgt(x, mu, sigma, lambda, p = 2, q = 1/2, mean.cent = FALSE, 
++ var.adj = FALSE)
+\end{Sinput}
+\end{Schunk}
+
+The Skewed Cauchy Distribution has the pdf:
+\singlespacing \begin{align*} 
+f_{SGT}(x; \mu, \sigma, \lambda, p = 2, q = 1/2) 
+\end{align*}
+\begin{align*} 
+= f_{SCauchy}(x; \mu, \sigma, \lambda) = \frac{\sqrt{2}}{v \sigma \pi \left(\frac{2 \left| x-\mu  \right| ^2}{(v \sigma) ^2 (\lambda  \text{\text{sign}}(x-\mu )+1)^2}+1\right)}
+\end{align*}
+
+\bigskip
+\doublespacing The $h^{th}$ moment (i.e. $E[(X- E(X))^h]$) is undefined. Thus the mean, variance, skewness, and kurtosis are all undefined. If \texttt{mean.cent} or \texttt{var.adj} are \texttt{TRUE}, \texttt{NaNs} are produced.
+
+NOTE: If \texttt{var.adj = sqrt(2)}, then $v = \sqrt{2}$, which gives a pdf more consistent with the standard parameterization of the Cauchy distribution:
+\begin{align*} 
+= f_{SCauchy}(x; \mu, \sigma, \lambda) = \frac{1}{\sigma \pi \left(\frac{\left| x-\mu \right| ^2}{ \sigma ^2 (\lambda  \text{\text{sign}}(x-\mu )+1)^2}+1\right)}
+\end{align*}
+
+\clearpage
+\section{Laplace Distribution}
+
+\begin{Schunk}
+\begin{Sinput}
+> dsgt(x, mu, sigma, lambda = 0, p = 1, q = Inf, mean.cent, var.adj)
+\end{Sinput}
+\end{Schunk}
+
+The Laplace Distribution has the pdf:
+\singlespacing \begin{align*} 
+\lim_{q\to\infty} f_{SGT}(x; \mu, \sigma, \lambda = 0, p = 1, q) 
+\end{align*}
+\begin{align*}
+= f_{Laplace}(x; \mu, \sigma) = \frac{e^{ \frac{- |x - \mu|}{ v \sigma } }}{2 v \sigma }
+\end{align*}
+\doublespacing where 
+\begin{align*}
+v = \frac{1}{\sqrt{2}}
+\end{align*}
+if \texttt{var.adj = TRUE}, $v = 1$ if \texttt{var.adj = FALSE}, and $v$ is the value of \texttt{var.adj} if \texttt{var.adj} is a positive scalar. 
+
+The $h^{th}$ moment (i.e. $E[(X- E(X))^h]$) is:
+\small \begin{align*}
+\frac{\left( 1+(-1)^h \right) (v \sigma)^h  \Gamma \left( h+1 \right) }{2}
+\end{align*}
+
+\normalsize The mean is $\mu$.
+
+The variance is:
+\begin{align*} 
+2 (v \sigma) ^2 
+\end{align*} 
+thus if \texttt{var.adj = TRUE}, the variance is simply $\sigma^2$.
+
+The skewness 0.
+
+The kurtosis is:
+\begin{align*}
+24 (v \sigma)^4
+\end{align*}
+
+\clearpage
+\section{Uniform Distribution}
+
+\begin{Schunk}
+\begin{Sinput}
+> dsgt(x, mu, sigma, lambda, p = Inf, mean.cent, var.adj)
+\end{Sinput}
+\end{Schunk}
+
+The Uniform has the pdf:
+\singlespacing \begin{align*} 
+\lim_{p \to \infty} f_{SGT}(x; \mu, \sigma, \lambda, p, q) 
+\end{align*}
+\[ = f_{unif}(x; \mu, \sigma) = \begin{cases} 
+      \frac{1}{2 v \sigma} & \text{if } |x - \mu| \leq v \sigma \\
+      0 & \text{otherwise}
+   \end{cases}
+\]
+\doublespacing where 
+\begin{align*}
+v = \sqrt{3}
+\end{align*}
+if \texttt{var.adj = TRUE}, $v = 1$ if \texttt{var.adj = FALSE}, and $v$ is the value of \texttt{var.adj} if \texttt{var.adj} is a positive scalar. 
+
+The $h^{th}$ moment (i.e. $E[(X- E(X))^h]$) is:
+\small \begin{align*}
+ \frac{1}{2 v \sigma (h+1)} \left( (v \sigma)^{h+1} - (-v \sigma)^{h+1} \right)
+\end{align*}
+
+\normalsize The mean is $\mu$.
+
+The variance is:
+\begin{align*} 
+\frac{(v \sigma)^2}{3}
+\end{align*} 
+thus if \texttt{var.adj = TRUE}, the variance is simply $\sigma^2$.
+
+The skewness is 0.
+
+The kurtosis is:
+\begin{align*}
+\frac{(v \sigma)^4}{5}
+\end{align*}
+
+\clearpage
+\section{Normal Distribution}
+
+\begin{Schunk}
+\begin{Sinput}
+> dsgt(x, mu, sigma, lambda = 0, p = 2, q = Inf, mean.cent, var.adj)
+\end{Sinput}
+\end{Schunk}
+
+The Normal Distribution has the pdf:
+\singlespacing \begin{align*} 
+\lim_{q\to\infty} f_{SGT}(x; \mu, \sigma, \lambda = 0, p = 2, q) 
+\end{align*}
+\begin{align*}
+= f_{Normal}(x; \mu, \sigma) = \frac{e^{- \left( \frac{|x - \mu|}{ v \sigma } \right)^2 }}{v \sigma \sqrt{\pi}}
+\end{align*}
+\doublespacing where 
+\begin{align*}
+v = \sqrt{2}
+\end{align*}
+if \texttt{var.adj = TRUE}, $v = 1$ if \texttt{var.adj = FALSE}, and $v$ is the value of \texttt{var.adj} if \texttt{var.adj} is a positive scalar. 
+
+The $h^{th}$ moment (i.e. $E[(X- E(X))^h]$) is:
+\begin{align*}
+ \left( 1+(-1)^h \right) \frac{(v \sigma)^h}{2} \left( \frac{ \Gamma \left( \frac{h+1}{2} \right)}{ \sqrt{\pi} } \right)
+\end{align*}
+
+The mean is $\mu$.
+
+The variance is:
+\begin{align*} 
+\frac{(v \sigma)^2 }{2}
+\end{align*} 
+thus if \texttt{var.adj = TRUE}, the variance, for $pq > 2$, is simply $\sigma^2$.
+
+The skewness is 0.
+
+The kurtosis is:
+\begin{align*}
+\frac{3 (v \sigma)^4 }{4}
+\end{align*}
+
+\clearpage
+\section{Cauchy Distribution}
+
+\begin{Schunk}
+\begin{Sinput}
+> dsgt(x, mu, sigma, lambda = 0, p = 2, q = 1/2, mean.cent = FALSE, 
++ var.adj = FALSE)
+\end{Sinput}
+\end{Schunk}
+
+The Cauchy Distribution has the pdf:
+\singlespacing \begin{align*} 
+f_{SGT}(x; \mu, \sigma, \lambda = 0, p = 2, q = 1/2) 
+\end{align*}
+\begin{align*} 
+= f_{Cauchy}(x; \mu, \sigma) = \frac{\sqrt{2}}{v \sigma \pi \left(\frac{2 \left| x-\mu \right| ^2}{(v \sigma) ^2}+1\right)}
+\end{align*}
+
+\bigskip
+\doublespacing The $h^{th}$ moment (i.e. $E[(X- E(X))^h]$), for $pq > h$, is: undefined. Thus the mean, variance, skewness, and kurtosis are all undefined. If \texttt{mean.cent} or \texttt{var.adj} are \texttt{TRUE}, \texttt{NaNs} are produced.
+
+NOTE: If \texttt{var.adj = sqrt(2)}, then $v = \sqrt{2}$, which gives the standard parameterization of the Cauchy pdf:
+\begin{align*} 
+= f_{Cauchy}(x; \mu, \sigma) = \frac{1}{ \sigma \pi \left(  \left( \frac{x- \mu}{\sigma} \right)^2+1\right)}
+\end{align*}
+
+
+\clearpage
+\begin{thebibliography}{1}
+
+\bibitem{hansen1} Hansen, B. E., 1994, Autoregressive Conditional Density Estimation, {\em International Economic Review} 35, 705-730. 
+
+\bibitem{hansen2} Hansen, C., J. B. McDonald, and W. K. Newey, 2010, Enstrumental Variables Estimation with Flexible Distributions, {\em Journal of Business and Economic Statistics} 28, 13-25. 
+
+\bibitem{mcdonald3} McDonald, J. B. and W. K. Newey, 1988, Partially Adaptive Estimation of Regression Models via the Generalized t Distribution, {\em Econometric Theory} 4, 428-457. 
+
+\bibitem{Theodossiou} Theodossiou, Panayiotis, 1998, Financial Data and the Skewed Generalized T Distribution, {\em Management Science} 44, 1650-1661. 
+
+\end{thebibliography}
+
+\end{document}

@@ -1,0 +1,14 @@
+export(dsgt)
+export(psgt)
+export(qsgt)
+export(rsgt)
+export(sgt.mle)
+
+importFrom(optimx, optimx)
+importFrom(numDeriv, hessian)
+importFrom(numDeriv, grad)
+
+S3method(print, sgtest)
+S3method(summary, sgtest)
+S3method(print, summary.sgtest)
+
