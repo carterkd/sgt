@@ -99,7 +99,7 @@ lambda.f = lambda ~ (exp(d0 + d1*x1 + d2*x2)-1)/(exp(d0 + d1*x1 + d2*x2)+1)
 ### Estimate Regression with a skewed generalized t error term
 ### This estimates the regression model from the Davis, McDonald, and Walton (2015) paper cited in the references section
 ### q is in reality infinite since the error term is normal
-result = sgt.mle(X.f = X.f, mu.f = mu.f, sigma.f = sigma.f, lambda.f = lambda.f, data = data, start = start, method = "nlm")
+result = sgt.mle(X.f = X.f, mu.f = mu.f, sigma.f = sigma.f, lambda.f = lambda.f, data = data, start = start, var.adj = FALSE, method = "nlm")
 print(result)
 print(summary(result))
 }

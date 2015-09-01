@@ -58,7 +58,7 @@ mean.cent = TRUE, var.adj = TRUE)
 \details{
   If \code{mu}, \code{sigma}, \code{lambda}, \code{p}, or \code{q} are not specified they assume the default values of \code{mu = 0}, \code{sigma = 1}, \code{lambda = 0}, \code{p = 2}, and \code{q = Inf}. These default values yield a standard normal distribution. 
 
-  See Vignette.pdf in this package for the density of this distribution and its moments.
+  See \code{vignette('sgt')} for the probability density function, moments, and various special cases of the skewed generalized t distribution.
 }
 \seealso{
   \link{Distributions} for other standard distributions which are special cases of the skewed generalized t distribution, including \code{\link{dt}} for the t distribution, \code{\link{dnorm}} for the normal distribution, and \code{\link{dunif}} for the uniform distribution. Other special cases of the skewed generalized t distribution include the generalized t distribution in the \code{gamlss.dist} package, the skewed t distribution in the \code{skewt} package, the exponential power distribution (also known as the generalized error distribution) in the \code{normalp} package, and the Laplace distribution in the \code{rmutil} package. Also see \code{\link{beta}} for the beta function.
