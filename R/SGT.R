@@ -97,5 +97,5 @@ rsgt = function(n, mu = 0, sigma = 1, lambda = 0, p = 2, q = Inf, mean.cent = TR
 	lambda = rep(lambda, length.out=n)
 	p = rep(p, length.out=n)
 	q = rep(q, length.out=n)
-	return(qsgt(runif(n), mu, sigma, lambda, p, q, mean.cent, var.adj))
+	return(qsgt(stats::runif(n), mu, sigma, lambda, p, q, mean.cent, var.adj))
 }

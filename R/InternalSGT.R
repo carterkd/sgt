@@ -12,7 +12,7 @@
 	flip = quant > 0
 	lambda[flip] = -lambda[flip]
 	quant[flip] = -quant[flip]
-	out = (1-lambda)/2+(lambda-1)/2*pbeta(1/(1+q*(sigma*(1-lambda)/(-quant))^p),1/p,q)
+	out = (1-lambda)/2+(lambda-1)/2*stats::pbeta(1/(1+q*(sigma*(1-lambda)/(-quant))^p),1/p,q)
 	out[flip] = 1 - out[flip]
 	if(!lower.tail) out = 1 - out
 	if(log.p) out = log(out)
@@ -27,7 +27,7 @@
 	prob[flip] = 1 - prob[flip]
 	lam = lambda
 	lam[flip] = -lam[flip]
-	out = sigma*(lam-1)*(1/(q*qbeta(1-2*prob/(1-lam),1/p,q))-1/q)^(-1/p)
+	out = sigma*(lam-1)*(1/(q*stats::qbeta(1-2*prob/(1-lam),1/p,q))-1/q)^(-1/p)
 	out[flip] = -out[flip]
 	out = out + mu
 	if(mean.cent) out = out - (2*sigma*lambda*q^(1/p)*beta(2/p,q-1/p))/beta(1/p,q)

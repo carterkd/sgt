@@ -19,7 +19,7 @@ print.sgtest = function(x, ...) {
 
 summary.sgtest = function(object, ...) {
 	object$z.score = object$estimate/object$std.error
-	object$p.value = 2*pnorm(-abs(object$z.score))
+	object$p.value = 2*stats::pnorm(-abs(object$z.score))
 	names(object$z.score) = names(object$estimate)
 	names(object$p.value) = names(object$estimate)
 	object$summary.table = as.data.frame(cbind(object$estimate, object$std.error, object$z.score, object$p.value), row.names=names(object$estimate))
@@ -60,7 +60,7 @@ sgt.mle = function(X.f, mu.f = mu ~ mu, sigma.f = sigma ~ sigma, lambda.f = lamb
 	varNames = NULL
 	envir = new.env()
 	for(i in 1:6) {
-		formList[[i]] = as.formula(formList[[i]])
+		formList[[i]] = stats::as.formula(formList[[i]])
 		if(length(formList[[i]]) == 2L) {
 			formList[[i]][[3L]] = formList[[i]][[2L]]
 			formList[[i]][[2L]] = as.name(names(formList)[i])
